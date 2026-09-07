@@ -433,6 +433,31 @@ const CAMPOS_ETIQUETA = [
 ]
 
 const RE_NOMBRE_EVENTO = /vtp_eventName["']?\s*[:=]\s*["']([A-Za-z0-9_.\- ]{2,60})["']/
+const RE_EVENTO_ESTANDAR = /vtp_standardEventName["']?\s*[:=]\s*["']([A-Za-z0-9_.\- ]{2,60})["']/
+const RE_EVENTO_PERSONALIZADO = /vtp_customEventName["']?\s*[:=]\s*["']([A-Za-z0-9_.\- ]{2,60})["']/
+
+// ⚠️ En la plantilla oficial de Meta, `vtp_eventName` NO es el nombre del
+// evento: es el SELECTOR DEL TIPO, y vale «standard» o «custom». El nombre de
+// verdad vive en `vtp_standardEventName` o en `vtp_customEventName`:
+//
+//   "vtp_pixelId":"1246...","vtp_standardEventName":"PageView",
+//   "vtp_eventName":"standard"
+//
+// Leyendo el campo por su nombre, el informe declaraba que la tienda usa dos
+// eventos personalizados llamados «standard» y «custom» —que no existen— y se
+// perdía los reales. Es el mismo vicio que un rótulo metido dentro del valor:
+// el campo se llama igual en dos plantillas y significa cosas distintas.
+const SELECTORES_DE_TIPO = new Set(['standard', 'custom'])
+
+function nombreDeEvento(cuerpo) {
+  const selector = (cuerpo.match(RE_NOMBRE_EVENTO) || [])[1]
+  const tipo = selector && selector.trim().toLowerCase()
+  if (tipo === 'standard') return (cuerpo.match(RE_EVENTO_ESTANDAR) || [])[1]
+  if (tipo === 'custom') return (cuerpo.match(RE_EVENTO_PERSONALIZADO) || [])[1]
+  // Sin selector, el campo específico manda si existe; si no, el genérico,
+  // que es lo que usan las etiquetas de GA4.
+  return (cuerpo.match(RE_EVENTO_ESTANDAR) || [])[1] || (cuerpo.match(RE_EVENTO_PERSONALIZADO) || [])[1] || (SELECTORES_DE_TIPO.has(tipo) ? undefined : selector)
+}
 
 // En un contenedor real el ID de GA4 casi nunca es un literal: la etiqueta lo
 // toma de una variable. Si la plataforma se dedujera del ID, todos los eventos
@@ -481,13 +506,13 @@ function leerCodigoContenedor(js) {
       duenos.push({ plataforma: c.plataforma, tipo: c.tipo, id, via: c.via })
       senales.push({ plataforma: c.plataforma, tipo: c.tipo, id, carga: true, via: c.via })
     }
-    const nombre = (cuerpo.match(RE_NOMBRE_EVENTO) || [])[1]
+    const nombre = nombreDeEvento(cuerpo)
     const dePlantilla = duenos.find((d) => d.tipo !== 'ua' && d.tipo !== 'ads')
     const plataforma = PLATAFORMA_POR_FUNCION[fn] || (dePlantilla && dePlantilla.plataforma)
     if (nombre && plataforma) {
       const limpio = nombre.trim()
       if (!EVENTOS_IGNORADOS.has(limpio)) eventos.push({ plataforma, nombre: limpio })
-    } else if (!nombre && /vtp_eventName/.test(cuerpo)) {
+    } else if (!nombre && /vtp_(?:standard|custom)?[eE]ventName/.test(cuerpo)) {
       opacas++
     }
   }

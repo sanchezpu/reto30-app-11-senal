@@ -136,7 +136,10 @@ export default function Informe({ informe, alReiniciar }: { informe: TInforme; a
             <p className="text-xs font-semibold uppercase tracking-widest text-senal">
               {informe.ejemplo ? 'Informe de ejemplo' : 'Informe de medición'}
             </p>
-            <h1 className="mt-1 break-words text-2xl font-semibold sm:text-3xl">{sitio}</h1>
+            {/* A 24px un dominio corriente no cabe en 390px y `break-words` lo
+                parte a mitad de palabra: «icebergmarketingdigital.c / om».
+                A 20px entra en una línea. En pantalla grande no cambia nada. */}
+            <h1 className="mt-1 break-words text-xl font-semibold sm:text-3xl">{sitio}</h1>
             <p className="mt-1 text-sm text-textoSuave">
               {informe.negocioNombre} · {informe.paginas.filter((p) => p.ok).length} de {informe.paginas.length}{' '}
               {informe.paginas.length === 1 ? 'página leída' : 'páginas leídas'} ·{' '}

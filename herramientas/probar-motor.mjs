@@ -109,6 +109,26 @@ console.log('\n· Un evento de Meta dentro de GTM no se atribuye a Google')
 }
 
 
+console.log('\n· La plantilla de Meta: `vtp_eventName` es el TIPO, no el nombre')
+{
+  // Forma exacta de una etiqueta de la plantilla oficial de Meta en un
+  // contenedor real: el nombre vive en standardEventName / customEventName.
+  const plantillaMeta = [
+    `{"function":"__cvt_5RM3Q","vtp_pixelId":"1042577819384210","vtp_standardEventName":"PageView","vtp_eventName":"standard","tag_id":1}`,
+    `{"function":"__cvt_5RM3Q","vtp_pixelId":"1042577819384210","vtp_customEventName":"purchase_declined","vtp_eventName":"custom","tag_id":2}`,
+    `{"function":"__cvt_5RM3Q","vtp_pixelId":"1042577819384210","vtp_standardEventName":"Purchase","vtp_eventName":"standard","tag_id":3}`,
+  ]
+  const inf = await auditar([PORTADA], 'ecommerce', lector({ [PORTADA]: html(''), [GTM]: contenedor(plantillaMeta) }))
+  const meta = inf.eventos.filter((e) => e.plataforma === 'meta').map((e) => e.nombre).sort()
+  comprobar('no inventa un evento llamado «standard»', !meta.includes('standard'), JSON.stringify(meta))
+  comprobar('no inventa un evento llamado «custom»', !meta.includes('custom'), JSON.stringify(meta))
+  comprobar('sí lee PageView y Purchase', meta.includes('PageView') && meta.includes('Purchase'), JSON.stringify(meta))
+  comprobar('sí lee el personalizado de verdad', meta.includes('purchase_declined'), JSON.stringify(meta))
+  const inventados = inf.eventos.filter((e) => e.plataforma === 'meta' && !e.estandar).map((e) => e.nombre)
+  comprobar('solo el personalizado cuenta como inventado', inventados.length === 1 && inventados[0] === 'purchase_declined', JSON.stringify(inventados))
+}
+
+
 console.log('\n· El mismo píxel iniciado por DOS etiquetas de HTML del mismo contenedor')
 {
   const dosVeces = [
