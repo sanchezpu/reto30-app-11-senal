@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-fondo text-texto font-cuerpo antialiased;
+  }
+  /* El foco tiene que verse sobre fondo oscuro: el azul del navegador se pierde. */
+  :focus-visible {
+    outline: 2px solid #4ade80;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .medida {
+    @apply mx-auto w-full max-w-5xl px-5 sm:px-8;
+  }
+  .tarjeta {
+    @apply rounded-xl border border-borde bg-panel;
+  }
+  .cifra {
+    @apply font-mono tabular-nums;
+  }
+}
+
+/*
+  La app se ve en un monitor oscuro y se imprime en papel blanco. No se
+  duplican los estilos: se apagan los fondos y se fuerza la tinta, que es lo
+  único que cambia de verdad entre las dos superficies.
+*/
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .no-imprimir {
+    display: none !important;
+  }
+  .medida {
+    max-width: none;
+    padding: 0;
+  }
+  .tarjeta,
+  [class*='bg-panel'],
+  [class*='bg-fondo'] {
+    background: #fff !important;
+    border-color: #c9c9c9 !important;
+  }
+  [class*='text-texto'],
+  [class*='text-textoSuave'],
+  [class*='text-textoTenue'] {
+    color: #1a1a1a !important;
+  }
+  h1,
+  h2,
+  h3 {
+    color: #000 !important;
+  }
+  .evitar-corte {
+    break-inside: avoid;
+  }
+  a[href]:after {
+    content: '';
+  }
+}
